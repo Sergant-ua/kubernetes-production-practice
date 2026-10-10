@@ -80,7 +80,7 @@ chmod +x ./kind && sudo mv ./kind /usr/local/bin/kind
 
 ## 4. Helm
 
-Helm is the Kubernetes package manager. It will be used to install and manage chart-based components and policies in **Module 03**:
+Helm is the Kubernetes package manager:
 
 ```bash
 curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
