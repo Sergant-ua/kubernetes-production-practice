@@ -110,5 +110,14 @@ kubectl config current-context
 kubectl cluster-info
 ```
 
+Check Installed Software Versions
+
+```bash
+docker --version
+kubectl version --client
+kind version
+helm version --short
+```
+
 > **Note:** The download URLs above target `linux/amd64`, and the kind command pins version `v0.22.0`. Use matching binaries if your CPU architecture differs.
 
