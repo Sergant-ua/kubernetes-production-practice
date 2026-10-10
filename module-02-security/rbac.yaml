@@ -1,0 +1,177 @@
+---
+# 1. Mentor permissions (full access to student namespaces)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: student01
+  name: mentor-full-access
+rules:
+- apiGroups: ["*", "apps", "batch"]
+  resources: ["*"]
+  verbs: ["*"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  namespace: student01
+  name: mentor-student01-binding
+subjects:
+- kind: User
+  name: mentor
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: mentor-full-access
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  namespace: student02
+  name: mentor-student02-binding
+subjects:
+- kind: User
+  name: mentor
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: mentor-full-access
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  namespace: student03
+  name: mentor-student03-binding
+subjects:
+- kind: User
+  name: mentor
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: mentor-full-access
+  apiGroup: rbac.authorization.k8s.io
+
+---
+# 2. Permissions for Student 01 & 03 (full access within their namespace)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: student01
+  name: student-full-access
+rules:
+- apiGroups: ["*", "apps", "batch"]
+  resources: ["*"]
+  verbs: ["*"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  namespace: student01
+  name: student01-full-binding
+subjects:
+- kind: User
+  name: student01
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: student-full-access
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: student03
+  name: student-full-access
+rules:
+- apiGroups: ["*", "apps", "batch"]
+  resources: ["*"]
+  verbs: ["*"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  namespace: student03
+  name: student03-full-binding
+subjects:
+- kind: User
+  name: student03
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: student-full-access
+  apiGroup: rbac.authorization.k8s.io
+
+---
+# 3. Permissions for Student 02 (full access in student02, read-only in student01 and default)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: student02
+  name: student-full-access
+rules:
+- apiGroups: ["*", "apps", "batch"]
+  resources: ["*"]
+  verbs: ["*"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  namespace: student02
+  name: student02-full-binding
+subjects:
+- kind: User
+  name: student02
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: student-full-access
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: student01
+  name: student-readonly
+rules:
+- apiGroups: ["*", "apps", "batch"]
+  resources: ["*"]
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  namespace: student01
+  name: student02-readonly-binding
+subjects:
+- kind: User
+  name: student02
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: student-readonly
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: default
+  name: student-readonly
+rules:
+- apiGroups: ["*", "apps", "batch"]
+  resources: ["*"]
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  namespace: default
+  name: student02-readonly-default-binding
+subjects:
+- kind: User
+  name: student02
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: student-readonly
+  apiGroup: rbac.authorization.k8s.io
