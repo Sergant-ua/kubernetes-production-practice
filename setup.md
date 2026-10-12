@@ -83,7 +83,7 @@ chmod +x ./kind && sudo mv ./kind /usr/local/bin/kind
 Helm is the Kubernetes package manager:
 
 ```bash
-curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 ```
 
 ## 5. Cluster Creation
@@ -110,7 +110,7 @@ kubectl config current-context
 kubectl cluster-info
 ```
 
-Check Installed Software Versions
+## 6. Verify Installed Software Versions
 
 ```bash
 docker --version
