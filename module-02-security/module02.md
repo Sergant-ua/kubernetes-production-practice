@@ -8,6 +8,15 @@ Practical laboratory assignment focusing on configuring a secure, isolated multi
 - `require-readonly-rootfs.yaml` — Kyverno audit policy for read-only root filesystems.
 - `add-person-label.yaml` — Kyverno mutation policy for automatic `person` label injection.
 
+## Working Directory
+
+Before starting the lab, navigate to the Module 02 directory
+from the repository root:
+
+```bash
+cd module-02-security
+```
+
 ## Execution Steps
 
 ### 1. Environment & Cluster Prerequisites
@@ -119,10 +128,36 @@ Apply the RBAC manifest to configure roles and role bindings:
 kubectl apply -f rbac.yaml
 ```
 
-Verify RBAC resources:
+### Verify RBAC Configuration
+
+Verify that the mentor ClusterRole exists:
 
 ```bash
-kubectl get roles,rolebindings --all-namespaces
+kubectl get clusterrole mentor-full-access
+```
+
+Verify Roles and RoleBindings across all namespaces:
+
+```bash
+kubectl get roles,rolebindings -A
+```
+
+Verify user permissions using dedicated kubeconfig files:
+
+```bash
+kubectl --kubeconfig=student01.kubeconfig auth can-i create pods -n student01
+kubectl --kubeconfig=student01.kubeconfig auth can-i create pods -n student02
+kubectl --kubeconfig=student02.kubeconfig auth can-i get pods -n student01
+kubectl --kubeconfig=mentor.kubeconfig auth can-i create deployments -n student03
+```
+
+Expected results:
+
+```text
+yes
+no
+yes
+yes
 ```
 
 > **Note:** Creating client certificates and kubeconfig files does not grant access by itself. Permissions are determined by the corresponding RBAC bindings.
