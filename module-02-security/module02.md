@@ -4,18 +4,19 @@ Practical laboratory assignment focusing on configuring a secure, isolated multi
 
 ## Contents of This Directory
 
-- `rbac.yaml` — Roles and RoleBindings for mentor and student namespaces.
+- `rbac.yaml` — ClusterRole, Roles, and RoleBindings for mentor and student namespaces.
 - `require-readonly-rootfs.yaml` — Kyverno audit policy for read-only root filesystems.
 - `add-person-label.yaml` — Kyverno mutation policy for automatic `person` label injection.
 
 ## Working Directory
 
-Before starting the lab, navigate to the Module 02 directory
-from the repository root:
+From the repository root, navigate to the Module 02 directory before running the commands:
 
 ```bash
 cd module-02-security
 ```
+
+All relative file paths in this guide assume this working directory.
 
 ## Execution Steps
 
@@ -128,39 +129,71 @@ Apply the RBAC manifest to configure roles and role bindings:
 kubectl apply -f rbac.yaml
 ```
 
-### Verify RBAC Configuration
-
-Verify that the mentor ClusterRole exists:
+Verify RBAC resources:
 
 ```bash
 kubectl get clusterrole mentor-full-access
-```
-
-Verify Roles and RoleBindings across all namespaces:
-
-```bash
 kubectl get roles,rolebindings -A
 ```
 
-Verify user permissions using dedicated kubeconfig files:
+> **Note:** Creating client certificates and kubeconfig files does not grant access by itself. Permissions are determined by the corresponding RBAC bindings.
+
+#### Verify RBAC permissions
+
+Run these checks using the dedicated user kubeconfig files, not the administrator's context:
 
 ```bash
+# Mentor: write access to all student namespaces
+kubectl --kubeconfig=mentor.kubeconfig auth can-i create pods -n student01
+kubectl --kubeconfig=mentor.kubeconfig auth can-i create pods -n student02
+kubectl --kubeconfig=mentor.kubeconfig auth can-i create pods -n student03
+
+# Mentor: no unrestricted permissions across the cluster
+kubectl --kubeconfig=mentor.kubeconfig auth can-i '*' '*' --all-namespaces
+
+# Student01: access only to own namespace
 kubectl --kubeconfig=student01.kubeconfig auth can-i create pods -n student01
 kubectl --kubeconfig=student01.kubeconfig auth can-i create pods -n student02
+
+# Student02: read-only access to student01 and default
 kubectl --kubeconfig=student02.kubeconfig auth can-i get pods -n student01
-kubectl --kubeconfig=mentor.kubeconfig auth can-i create deployments -n student03
+kubectl --kubeconfig=student02.kubeconfig auth can-i create pods -n student01
+kubectl --kubeconfig=student02.kubeconfig auth can-i get pods -n default
+kubectl --kubeconfig=student02.kubeconfig auth can-i create pods -n default
+
+# Student03: access only to own namespace
+kubectl --kubeconfig=student03.kubeconfig auth can-i create pods -n student03
+kubectl --kubeconfig=student03.kubeconfig auth can-i create pods -n student01
 ```
 
-Expected results:
+Expected results, in the order shown:
 
 ```text
 yes
+yes
+yes
 no
 yes
+no
 yes
+no
+yes
+no
+yes
+no
 ```
 
-> **Note:** Creating client certificates and kubeconfig files does not grant access by itself. Permissions are determined by the corresponding RBAC bindings.
+Verify that students do not have unrestricted cluster-wide permissions:
+
+```bash
+for user in student01 student02 student03; do
+  echo "Checking $user:"
+  kubectl --kubeconfig="${user}.kubeconfig" auth can-i '*' '*' --all-namespaces
+done
+```
+
+Expected result: `no` for each student. These checks confirm the required access boundaries, but are not a complete audit of every possible permission or privilege escalation path.
+
 
 ### 3. Policy as Code (Kyverno)
 
@@ -203,3 +236,85 @@ List installed Kyverno cluster policies:
 kubectl get clusterpolicies
 ```
 
+#### Test read-only root filesystem audit policy
+
+Confirm the validation rule uses `Audit` mode:
+
+```bash
+kubectl get clusterpolicy require-readonly-rootfs \
+  -o jsonpath='{.spec.rules[0].validate.failureAction}{"\n"}'
+```
+
+Expected output: `Audit`.
+
+Create a Pod without `securityContext.readOnlyRootFilesystem: true`:
+
+```bash
+kubectl run test-rootfs -n student01 \
+  --image=nginx:alpine --restart=Never
+kubectl get pod test-rootfs -n student01
+```
+
+The Pod should be created despite the policy violation because the rule is in Audit mode.
+
+Inspect its PolicyReport:
+
+```bash
+kubectl get policyreports -n student01
+kubectl describe policyreports -n student01
+```
+
+Find the entry with these values:
+
+```text
+Policy:  require-readonly-rootfs
+Rule:    check-readonly-rootfs
+Result:  fail
+```
+
+> **Note:** PolicyReports may take a short time to appear. A `fail` result indicates an audit finding; it does not mean the Pod was rejected.
+
+#### Test automatic person labels
+
+Create Pods in mentor, student, and default namespaces:
+
+```bash
+kubectl run test-student -n student01 --image=nginx:alpine --restart=Never
+kubectl run test-student -n student02 --image=nginx:alpine --restart=Never
+kubectl run test-student -n student03 --image=nginx:alpine --restart=Never
+kubectl run test-mentor -n mentor --image=nginx:alpine --restart=Never
+kubectl run test-default -n default --image=nginx:alpine --restart=Never --labels="person=student"
+```
+
+Inspect assigned labels:
+
+```bash
+kubectl get pod test-student -n student01 --show-labels
+kubectl get pod test-student -n student02 --show-labels
+kubectl get pod test-student -n student03 --show-labels
+kubectl get pod test-mentor -n mentor --show-labels
+kubectl get pod test-default -n default --show-labels
+```
+
+Expected values:
+
+| Namespace | Expected `person` label |
+| --- | --- |
+| `student01` | `student` |
+| `student02` | `student` |
+| `student03` | `student` |
+| `mentor` | `mentor` |
+| `default` | Absent (the explicitly supplied label is removed) |
+
+The policy also targets Pods in other namespaces outside this list to remove a supplied `person` label during admission. These tests verify the representative `default` case.
+
+#### Clean up test Pods
+
+```bash
+kubectl delete pod test-rootfs -n student01 --ignore-not-found
+kubectl delete pod test-student -n student01 --ignore-not-found
+kubectl delete pod test-student -n student02 --ignore-not-found
+kubectl delete pod test-student -n student03 --ignore-not-found
+kubectl delete pod test-mentor -n mentor --ignore-not-found
+kubectl delete pod test-default -n default --ignore-not-found
+```
