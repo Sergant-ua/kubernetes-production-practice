@@ -1,0 +1,67 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: add-person-label
+  annotations:
+    policies.kyverno.io/title: Assign Person Label to Pods
+    policies.kyverno.io/category: Multi-Tenancy
+    policies.kyverno.io/subject: Pod
+    policies.kyverno.io/description: >-
+      Set person=student in student namespaces, person=mentor in the mentor
+      namespace, and remove person from Pods in other namespaces.
+spec:
+  background: false
+  rules:
+    - name: label-student-pods
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - student01
+                - student02
+                - student03
+      mutate:
+        patchStrategicMerge:
+          metadata:
+            labels:
+              person: student
+
+    - name: label-mentor-pods
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - mentor
+      mutate:
+        patchStrategicMerge:
+          metadata:
+            labels:
+              person: mentor
+
+    - name: remove-person-label-elsewhere
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      exclude:
+        any:
+          - resources:
+              namespaces:
+                - mentor
+                - student01
+                - student02
+                - student03
+      preconditions:
+        all:
+          - key: "{{ request.object.metadata.labels.person || '' }}"
+            operator: NotEquals
+            value: ""
+      mutate:
+        patchesJson6902: |-
+          - op: remove
+            path: /metadata/labels/person
