@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-student-no-sidecar
+  namespace: student01
+  labels:
+    person: student
+    sidecar.istio.io/inject: "false"
+spec:
+  containers:
+    - name: nginx
+      image: nginx:alpine
