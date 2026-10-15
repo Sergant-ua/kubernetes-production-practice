@@ -1,0 +1,27 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-istio-sidecar
+spec:
+  background: false
+  rules:
+    - name: require-sidecar-for-students
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              operations:
+                - CREATE
+              selector:
+                matchLabels:
+                  person: student
+      validate:
+        failureAction: Enforce
+        message: "Pods with person=student must have istio-proxy container."
+        deny:
+          conditions:
+            all:
+              - key: "{{ request.object.spec.containers[?name=='istio-proxy'] | length(@) }}"
+                operator: Equals
+                value: 0

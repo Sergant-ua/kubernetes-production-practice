@@ -1,0 +1,22 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: inject-istio-student-namespaces
+spec:
+  background: false
+  rules:
+    - name: enable-istio-injection
+      match:
+        any:
+          - resources:
+              kinds:
+                - Namespace
+              names:
+                - student01
+                - student02
+                - student03
+      mutate:
+        patchStrategicMerge:
+          metadata:
+            labels:
+              istio-injection: enabled
