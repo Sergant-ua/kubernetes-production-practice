@@ -1,0 +1,19 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kyverno-policies
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Sergant-ua/kubernetes-production-practice.git
+    targetRevision: module-03
+    path: module-03-platform/helm/kyverno-policies
+    helm:
+      releaseName: kyverno-policies
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kyverno
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=false
