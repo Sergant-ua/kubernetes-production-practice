@@ -1,0 +1,16 @@
+validation:
+  enabled: true
+  failureAction: Audit
+  background: true
+
+mutation:
+  enabled: true
+  background: false
+  labelKey: person
+  studentLabelValue: student
+  mentorLabelValue: mentor
+  studentNamespaces:
+    - student01
+    - student02
+    - student03
+  mentorNamespace: mentor
