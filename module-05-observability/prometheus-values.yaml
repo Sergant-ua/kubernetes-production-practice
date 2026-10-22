@@ -1,0 +1,34 @@
+# Module 05 - Observability & Troubleshooting
+
+alertmanager:
+  enabled: false
+
+defaultRules:
+  create: false
+
+kubeEtcd:
+  enabled: false
+
+kubeScheduler:
+  enabled: false
+
+kubeControllerManager:
+  enabled: false
+
+grafana:
+  enabled: true
+  service:
+    type: ClusterIP
+  grafana.ini:
+    plugins:
+      preinstall_auto_update: false
+
+prometheus:
+  prometheusSpec:
+    retention: 2d
+    resources:
+      requests:
+        cpu: 100m
+        memory: 512Mi
+      limits:
+        memory: 1Gi

@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: student-workload
+  namespace: student01
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: student-workload
+  template:
+    metadata:
+      labels:
+        app: student-workload
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:alpine
+          resources:
+            requests:
+              cpu: 50m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: student-workload
+  namespace: student02
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: student-workload
+  template:
+    metadata:
+      labels:
+        app: student-workload
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:alpine
+          resources:
+            requests:
+              cpu: 50m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: student-workload
+  namespace: student03
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: student-workload
+  template:
+    metadata:
+      labels:
+        app: student-workload
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:alpine
+          resources:
+            requests:
+              cpu: 50m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
